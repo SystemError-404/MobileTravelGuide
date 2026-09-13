@@ -1,25 +1,25 @@
 // src/app/spots/[id]/page.tsx
 
 import { doc, getDoc } from "firebase/firestore";
-import { notFound } from "next/navigation"; // Import next/navigation to trigger notFound() if document isn't found
+import { notFound } from "next/navigation";
 import { FC } from "react";
 import Link from "next/link";
-import {db} from "../../../../lib/firebase";
-import {TouristSpot} from "../../../../types/TouristSpot";
+import { db } from "../../../../lib/firebase";
+import { TouristSpot } from "../../../../types/TouristSpot";
 
 interface SpotDetailsProps {
-    params: Promise<{ id: string }> // Expecting params to be an object with id
+    params: Promise<{ id: string }>;
 }
 
 const SpotDetails: FC<SpotDetailsProps> = async ({ params }) => {
-    const { id } = await params; // Now we can access `id` after `params` is awaited
+    const { id } = await params;
 
     // Fetch data from Firestore
     const docRef = doc(db, "touristSpots", id);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
-        notFound(); // Automatically triggers 404 page if spot isn't found
+        notFound();
     }
 
     const spot: TouristSpot = {

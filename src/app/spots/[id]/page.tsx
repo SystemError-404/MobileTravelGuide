@@ -1,17 +1,14 @@
-// src/app/spots/[id]/page.tsx
-
 import { doc, getDoc } from "firebase/firestore";
 import { notFound } from "next/navigation";
-import { FC } from "react";
 import Link from "next/link";
 import { db } from "../../../../lib/firebase";
 import { TouristSpot } from "../../../../types/TouristSpot";
 
-interface SpotDetailsProps {
+interface SpotDetailsPageProps {
     params: Promise<{ id: string }>;
 }
 
-const SpotDetails: FC<SpotDetailsProps> = async ({ params }) => {
+export default async function SpotDetails({ params }: SpotDetailsPageProps) {
     const { id } = await params;
 
     // Fetch data from Firestore
@@ -59,6 +56,4 @@ const SpotDetails: FC<SpotDetailsProps> = async ({ params }) => {
             </div>
         </div>
     );
-};
-
-export default SpotDetails;
+}

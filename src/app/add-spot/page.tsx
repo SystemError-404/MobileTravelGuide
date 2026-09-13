@@ -1,41 +1,72 @@
 "use client";
 import React, { useState } from "react";
-import {addDoc, collection, updateDoc} from "firebase/firestore";
+import { addDoc, collection, updateDoc } from "firebase/firestore";
 import { db } from "../../../lib/firebase";
 import Link from "next/link";
 import { TouristSpot } from "../../../types/TouristSpot";
 
+interface FormDataType {
+    Name: string;
+    Location: string;
+    Description: string;
+    Attraction_inquiry_id: string;
+    Municipality_id: string;
+    Rating: number;
+    Image_Base64: string;
+}
+
 export default function AddSpot() {
-    const [formData, setFormData] = useState<Omit<TouristSpot, "Attraction_Id" | "Image_Base64">>({
+    const [formData, setFormData] = useState<FormDataType>({
         Name: "",
         Location: "",
         Description: "",
         Attraction_inquiry_id: "",
         Municipality_id: "",
         Rating: 0,
-        Image_Base64: "", // Add this line to track the base64 encoded image
+        Image_Base64: "",
     });
     const [imageFile, setImageFile] = useState<File | null>(null);
+    const [error, setError] = useState<string>("");
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                if (reader.result) {
-                    setFormData({ ...formData, Image_Base64: reader.result.toString().split(',')[1] });
-                }
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        // Validate file size (limit to 2MB to avoid Vercel limits)
+        if (file.size > 2 * 1024 * 1024) {
+            setError("Image must be smaller than 2MB");
+            return;
         }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            // Safely handle reader result
+            if (typeof reader.result === "string") {
+                const base64String = reader.result.split(",")[1] || "";
+                setFormData((prev) => ({ ...prev, Image_Base64: base64String }));
+                setError("");
+            } else {
+                setError("Failed to read image");
+            }
+        };
+        reader.onerror = () => {
+            setError("Error reading file");
+        };
+        reader.readAsDataURL(file);
         setImageFile(file);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError("");
 
         if (!imageFile) {
-            alert("Please select an image.");
+            setError("Please select an image.");
+            return;
+        }
+
+        if (!formData.Name || !formData.Location || !formData.Description) {
+            setError("Please fill in all required fields");
             return;
         }
 
@@ -48,7 +79,7 @@ export default function AddSpot() {
             // Use the auto-generated document ID as the Attraction_Id
             const attractionId = docRef.id;
 
-            // Optionally, you can update the document to include the Attraction_Id
+            // Update the document to include the Attraction_Id
             await updateDoc(docRef, {
                 Attraction_Id: attractionId,
             });
@@ -61,12 +92,12 @@ export default function AddSpot() {
                 Attraction_inquiry_id: "",
                 Municipality_id: "",
                 Rating: 0,
-                Image_Base64: "", // Reset image base64
+                Image_Base64: "",
             });
-            setImageFile(null); // Clear the image file state
+            setImageFile(null);
         } catch (error) {
             console.error("Error adding spot:", error);
-            alert("Failed to add spot.");
+            setError("Failed to add spot. Please try again.");
         }
     };
 
@@ -79,6 +110,11 @@ export default function AddSpot() {
                 onSubmit={handleSubmit}
                 className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md"
             >
+                {error && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                        {error}
+                    </div>
+                )}
                 <div className="space-y-4">
                     <div>
                         <label className="block text-gray-700">Name</label>
@@ -90,6 +126,7 @@ export default function AddSpot() {
                                 setFormData({ ...formData, Name: e.target.value })
                             }
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
                         />
                     </div>
                     <div>
@@ -102,6 +139,7 @@ export default function AddSpot() {
                                 setFormData({ ...formData, Location: e.target.value })
                             }
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
                         />
                     </div>
                     <div>
@@ -113,6 +151,7 @@ export default function AddSpot() {
                                 setFormData({ ...formData, Description: e.target.value })
                             }
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
                         />
                     </div>
                     <div>
@@ -152,12 +191,15 @@ export default function AddSpot() {
                         />
                     </div>
                     <div>
-                        <label className="block text-gray-700">Image</label>
+                        <label className="block text-gray-700">
+                            Image <span className="text-red-500">*</span> (Max 2MB)
+                        </label>
                         <input
                             type="file"
                             accept="image/*"
                             onChange={handleImageChange}
                             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
                         />
                     </div>
                 </div>

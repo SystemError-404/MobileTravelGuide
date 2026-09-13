@@ -8,11 +8,11 @@ import {db} from "../../../../lib/firebase";
 import {TouristSpot} from "../../../../types/TouristSpot";
 
 interface SpotDetailsProps {
-    params: { id: string }; // Expecting params to be an object with id
+    params: Promise<{ id: string }> // Expecting params to be an object with id
 }
 
 const SpotDetails: FC<SpotDetailsProps> = async ({ params }) => {
-    const { id } = params; // Now we can access `id` after `params` is awaited
+    const { id } = await params; // Now we can access `id` after `params` is awaited
 
     // Fetch data from Firestore
     const docRef = doc(db, "touristSpots", id);
